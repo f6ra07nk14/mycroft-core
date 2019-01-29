@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 from subprocess import call
-from threading import Event
+from threading import Event, Lock
 from time import time as get_time, sleep
 
 from os.path import expanduser, isfile
@@ -36,6 +36,7 @@ class PadatiousService(FallbackSkill):
         self.config = Configuration.get()['padatious']
         self.service = service
         intent_cache = expanduser(self.config['intent_cache'])
+        self.lock = Lock()
 
         try:
             from padatious import IntentContainer
@@ -73,7 +74,8 @@ class PadatiousService(FallbackSkill):
         self.finished_training_event.clear()
 
         LOG.info('Training... (single_thread={})'.format(single_thread))
-        self.container.train(single_thread=single_thread)
+        with self.lock:
+            self.container.train(single_thread=single_thread)
         LOG.info('Training complete.')
 
         self.finished_training_event.set()
@@ -91,8 +93,9 @@ class PadatiousService(FallbackSkill):
             self.train()
 
     def __detach_intent(self, intent_name):
-        self.registered_intents.remove(intent_name)
-        self.container.remove_intent(intent_name)
+        with self.lock:
+            self.registered_intents.remove(intent_name)
+            self.container.remove_intent(intent_name)
 
     def handle_detach_intent(self, message):
         self.__detach_intent(message.data.get('intent_name'))
@@ -112,10 +115,10 @@ class PadatiousService(FallbackSkill):
         if not isfile(file_name):
             LOG.warning('Could not find file ' + file_name)
             return
-
-        register_func(name, file_name)
-        self.train_time = get_time() + self.train_delay
-        self.wait_and_train()
+        with self.lock:
+            register_func(name, file_name)
+            self.train_time = get_time() + self.train_delay
+            self.wait_and_train()
 
     def register_intent(self, message):
         self.registered_intents.append(message.data['name'])
@@ -143,4 +146,5 @@ class PadatiousService(FallbackSkill):
         return True
 
     def calc_intent(self, utt):
-        return self.container.calc_intent(utt)
+        with self.lock:
+            return self.container.calc_intent(utt)
