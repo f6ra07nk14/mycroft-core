@@ -304,9 +304,9 @@ class SkillTest(object):
                 loader:  A list of loaded skills
         """
         # Make sure any update to padatious is preformed before skill test
-        if loader.emitter.do_training:
-            loader.train_padatious()
-            loader.emitter.do_training = False
+        # if loader.emitter.do_training:
+        #    loader.train_padatious()
+        #    loader.emitter.do_training = False
 
         s = [s for s in loader.skills if s and s.root_dir == self.skill]
         if s:
