@@ -108,7 +108,11 @@ def play_wav(uri):
     for index, cmd in enumerate(play_wav_cmd):
         if cmd == "%1":
             play_wav_cmd[index] = (get_http(uri))
-    return subprocess.Popen(play_wav_cmd)
+    try:
+        return subprocess.Popen(play_wav_cmd)
+    except Exception:
+        LOG.error("Failed to launch WAV: {}".format(play_wav_cmd))
+        return None
 
 
 def play_mp3(uri):
@@ -129,7 +133,11 @@ def play_mp3(uri):
     for index, cmd in enumerate(play_mp3_cmd):
         if cmd == "%1":
             play_mp3_cmd[index] = (get_http(uri))
-    return subprocess.Popen(play_mp3_cmd)
+    try:
+        return subprocess.Popen(play_mp3_cmd)
+    except Exception:
+        LOG.error("Failed to launch MP3: {}".format(play_mp3_cmd))
+        return None
 
 
 def play_ogg(uri):
